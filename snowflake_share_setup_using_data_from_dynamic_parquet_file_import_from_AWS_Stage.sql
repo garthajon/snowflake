@@ -197,7 +197,7 @@ GRANT USAGE ON SCHEMA PRODUCER_SHARE_COMPASS.PUBLIC TO SHARE PROJECT1_SHARE;
 GRANT SELECT ON TABLE PRODUCER_SHARE_COMPASS.PUBLIC.PATIENT_CONTACT TO SHARE PROJECT1_SHARE;
 GRANT SELECT ON TABLE PRODUCER_SHARE_COMPASS.PUBLIC.PATIENT_CONTACT2 TO SHARE PROJECT1_SHARE;
 
--- explicit grant of the database role to the share
+-- explicit grant of the database role to the share (on the producer side)
 GRANT DATABASE ROLE DB_ROLE_PROJECT1 TO SHARE PROJECT1_SHARE;
 -- note that roles are not part of a share privilege model
 -- so the database role DB_ROLE_PROJECT1 is not part of the share
@@ -207,6 +207,10 @@ GRANT DATABASE ROLE DB_ROLE_PROJECT1 TO SHARE PROJECT1_SHARE;
 -- grant access to the share to the consumer snowflake account
 -- accounts are in the same region as the producer snowflake account
 -- so no need to specify the region
+
+-- also note AND THIS IS VERY IMPORTANT that the database role must be granted explicit access permission
+-- to the share on the producer side or else the consumer will not be able to use the database role
+-- and the row level access policy will not work
 
 --whereas the defined database role (which is used  in the access policy) is not 'live'
  --and therefore actioning across the share, the row level policy itself is live and 
