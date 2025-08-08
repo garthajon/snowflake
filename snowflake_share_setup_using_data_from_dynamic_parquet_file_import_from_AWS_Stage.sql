@@ -187,6 +187,9 @@ GRANT USAGE ON SCHEMA PRODUCER_SHARE_COMPASS.PUBLIC TO SHARE PROJECT1_SHARE;
 -- so when the table is shared, the row level access policy will also be shared
 GRANT SELECT ON TABLE PRODUCER_SHARE_COMPASS.PUBLIC.PATIENT_CONTACT TO SHARE PROJECT1_SHARE;
 GRANT SELECT ON TABLE PRODUCER_SHARE_COMPASS.PUBLIC.PATIENT_CONTACT2 TO SHARE PROJECT1_SHARE;
+
+-- explicit grant of the database role to the share
+GRANT DATABASE ROLE DB_ROLE_PROJECT1 TO SHARE PROJECT1_SHARE;
 -- note that roles are not part of a share privilege model
 -- so the database role DB_ROLE_PROJECT1 is not part of the share
 -- therefore for the consumer to make use of the database role DB_ROLE_PROJECT1
