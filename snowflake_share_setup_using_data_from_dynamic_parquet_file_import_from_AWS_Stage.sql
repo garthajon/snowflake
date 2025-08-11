@@ -356,13 +356,24 @@ WHERE NAME = 'PUBLIC';
 -- it is generally a good idea to restrict what the PUBLIC role can access in Snowflake—especially
  -- in environments where security, data governance, and least privilege principles are important
 
- 
+
 SELECT TOP 10 *
 FROM SNOWFLAKE.ACCOUNT_USAGE.GRANTS_TO_ROLES
 WHERE GRANTED_ON IN ('DATABASE', 'SCHEMA', 'TABLE')
   AND NAME = 'SNOWFLAKE_SAMPLE_DATA'
   -- THE GRANTEE (ie. whom the permission has been granted to) is public
   AND GRANTEE_NAME = 'PUBLIC'
+
+  -- actions for next time 12/08/2025
+  -- 1) restrict the scope of the public role
+  -- 2) create a new user/role after restricting the public role
+  -- 3) assign user (me)  to the new role
+  -- 4) test whether the new role can access the share prior to explicitly granting access to the share
+  -- 5) test whether the new role once access is granted to the share can also access the row level access policy
+  --    hopefully the user will only be able to access the row level access policy if the user is assigned to the database role
+  --    which is used in the row level access policy
+
+
 
 
 
