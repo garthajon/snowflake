@@ -253,9 +253,118 @@ GRANT IMPORTED PRIVILEGES ON DATABASE PRODUCER_SHARE_COMPASS TO ROLE DB_ROLE_PRO
 
 -- troubleshooting access to the PATIENT_CONTACT table
 
--- look at the permissions for role DB_ROLE_PROJECT1
+-- look at the permissions for role DB_ROLE_PROJECT1 ON the consumer side
 
 SHOW GRANTS TO ROLE DB_ROLE_PROJECT1;
+
+-- RUN THIS ON THE PRODUCER SIDE OF THE SHARE
+-- TO SHOW THE DETAIL OF WHICH ROW ACCESS POLICIES ARE IN PLACE IN A DATABASE/TABLE
+SHOW ROW ACCESS POLICIES
+DESC ROW ACCESS POLICY PROJECT1_PHONE_ACCESS_POLICY
+
+
+-- exploring permission in the account for roles
+
+-- TEST USING A ROLE WHICH DOES NOT EXPLICITLY HAVE ACCESS TO THE SHARE/DATABASE ROLE ACROSS THE SHARE
+USE ROLE db_role_project1;
+select top 10 * from information_schema.applicable_roles
+
+USE ROLE db_role_project1;
+select top 10 * from information_schema.usage_privileges
+
+
+SELECT COUNT(*) AS COUNTALL, USE_CONCEPT_ID FROM PATIENT_CONTACT
+GROUP BY USE_CONCEPT_ID
+
+SHOW GRANTS TO ROLE SNOWFLAKE_LEARNING_ROLE;
+
+-- Check privileges granted to a specific role
+SELECT *
+FROM SNOWFLAKE.ACCOUNT_USAGE.GRANTS_TO_ROLES
+WHERE NAME = 'SNOWFLAKE_LEARNING_ROLE';
+
+-- Check privileges granted to a specific role
+SELECT *
+FROM SNOWFLAKE.ACCOUNT_USAGE.GRANTS_TO_ROLES
+WHERE NAME != 'SNOWFLAKE_LEARNING_ROLE';
+and GRANTED_TO = 'ROLE'
+-- GRANTEE RECEIVES THE PRIVILEDGE
+ORDER BY GRANTEE_NAME
+
+
+-- Check privileges granted to a specific role
+SELECT *
+FROM SNOWFLAKE.ACCOUNT_USAGE.GRANTS_TO_ROLES
+WHERE 
+--
+--NAME != 'SNOWFLAKE_LEARNING_ROLE'
+--AND GRANTED_TO = 'ACCOUNTADMIN'
+GRANTED_TO = 'ROLE'
+AND 
+GRANTEE_NAME = 'SNOWFLAKE_LEARNING_ROLE'
+-- GRANTEE RECEIVES THE PRIVILEDGE
+ORDER BY GRANTEE_NAME
+
+
+-- Check privileges granted to a specific role
+SELECT *
+FROM SNOWFLAKE.ACCOUNT_USAGE.GRANTS_TO_ROLES
+WHERE 
+--
+--NAME != 'SNOWFLAKE_LEARNING_ROLE'
+--AND GRANTED_TO = 'ACCOUNTADMIN'
+GRANTED_TO = 'ROLE'
+AND 
+GRANTEE_NAME = 'DB_ROLE_PROJECT1'
+-- GRANTEE RECEIVES THE PRIVILEDGE
+ORDER BY GRANTEE_NAME
+
+
+  
+  select top 10 * from 
+  SNOWFLAKE.ACCOUNT_USAGE.GRANTS_TO_USERS
+  where role = 'SNOWFLAKE_LEARNING_ROLE'
+
+  SELECT top 10 *
+FROM SNOWFLAKE.ACCOUNT_USAGE.ROLES
+WHERE name = 'SNOWFLAKE_LEARNING_ROLE';
+
+SHOW ROLES;
+
+SHOW GRANTS TO ROLE DB_ROLE_PROJECT1;
+
+SHOW GRANTS TO ROLE SNOWFLAKE_LEARNING_ROLE;
+
+SHOW DATABASE ROLES IN PRODUCER_SHARE_COMPASS
+
+
+-- ***** EVERY NEW ROLE IN SNOWFLAKE AUTOMATICALLY INHERITS THE PERMISSIONS OF THE PUBLIC ROLE
+-- ***** THIS COULD CAUSE PROBLEMS IF THE PUBLIC ROLE HAS HIGH ADMINISTRATIVE PRIVILEGES
+-- ALSO THE PUBLIC ROLE BY DEFAULT CAN SEE SHARES    
+-- SO WE WILL NEED TO RUN A SCRIPT WHICH RESTRICTS THE PUBLIC ROLE 
+
+-- Check privileges granted to  the public role 
+-- we can that the databases 'snowflake' and 'snowflake_learning_db'
+SELECT *
+FROM SNOWFLAKE.ACCOUNT_USAGE.GRANTS_TO_ROLES
+WHERE NAME = 'PUBLIC';
+
+
+-- checking the permissions on the default free account snowflake sample share (for free sample data in snowflake on signing up)
+-- does user public have permissions to that share
+
+-- it is generally a good idea to restrict what the PUBLIC role can access in Snowflake—especially
+ -- in environments where security, data governance, and least privilege principles are important
+
+ 
+SELECT TOP 10 *
+FROM SNOWFLAKE.ACCOUNT_USAGE.GRANTS_TO_ROLES
+WHERE GRANTED_ON IN ('DATABASE', 'SCHEMA', 'TABLE')
+  AND NAME = 'SNOWFLAKE_SAMPLE_DATA'
+  -- THE GRANTEE (ie. whom the permission has been granted to) is public
+  AND GRANTEE_NAME = 'PUBLIC'
+
+
 
 
 
