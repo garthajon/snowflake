@@ -163,7 +163,7 @@ SET BODY ->
   ALTER ROW ACCESS POLICY PROJECT1_PHONE_ACCESS_POLICY
 SET BODY ->
   CASE
-    WHEN IS_DATABASE_ROLE_IN_SESSION('DB_ROLE_PROJECT1') AND USE_CONCEPT_ID = 'HomePhone' THEN TRUE
+    WHEN IS_DATABASE_ROLE_IN_SESSION('DB_ROLE_PROJECT2') AND USE_CONCEPT_ID = 'HomePhone' THEN TRUE
     ELSE FALSE
   END;
 
@@ -184,21 +184,18 @@ GROUP BY USE_CONCEPT_ID
 -- the share will include the PATIENT_CONTACT table and the database role DB_ROLE_PROJECT1
 -- the share will also include the row level access policy which will restrict access to the PATIENT_CONTACT table
 -- to only those rows where the USE_CONCEPT_ID is 'HomePhone' for the DB_ROLE_PROJECT1 role
+
+USE ROLE ACCOUNTADMIN;
+CREATE OR REPLACE DATABASE ROLE DB_ROLE_PROJECT2;
 DROP SHARE IF EXISTS PROJECT1_SHARE;
-
-
 CREATE OR REPLACE SHARE  PROJECT1_SHARE;
--- grant usage commands are used to add objects to the share
--- the share will include the PATIENT_CONTACT table and the database role DB_ROLE_PROJECT1  
-GRANT USAGE ON DATABASE PRODUCER_SHARE_COMPASS TO SHARE PROJECT1_SHARE;
-GRANT USAGE ON SCHEMA PRODUCER_SHARE_COMPASS.PUBLIC TO SHARE PROJECT1_SHARE;
--- recall that the PATIENT_CONTACT table has a row level access policy applied to it
--- so when the table is shared, the row level access policy will also be shared
-GRANT SELECT ON TABLE PRODUCER_SHARE_COMPASS.PUBLIC.PATIENT_CONTACT TO SHARE PROJECT1_SHARE;
-GRANT SELECT ON TABLE PRODUCER_SHARE_COMPASS.PUBLIC.PATIENT_CONTACT2 TO SHARE PROJECT1_SHARE;
+GRANT SELECT ON TABLE PRODUCER_SHARE_COMPASS.PUBLIC.PATIENT_CONTACT TO DATABASE ROLE DB_ROLE_PROJECT2;
+GRANT USAGE ON  SCHEMA PRODUCER_SHARE_COMPASS.PUBLIC TO DATABASE ROLE DB_ROLE_PROJECT2;
+GRANT USAGE ON DATABASE PRODUCER_SHARE_COMPASS TO SHARE  PROJECT1_SHARE;
+GRANT DATABASE ROLE DB_ROLE_PROJECT2 TO SHARE PROJECT1_SHARE;
+ALTER SHARE PROJECT1_SHARE ADD ACCOUNTS = KV29405;
 
--- explicit grant of the database role to the share (on the producer side)
-GRANT DATABASE ROLE DB_ROLE_PROJECT1 TO SHARE PROJECT1_SHARE;
+
 -- note that roles are not part of a share privilege model
 -- so the database role DB_ROLE_PROJECT1 is not part of the share
 -- therefore for the consumer to make use of the database role DB_ROLE_PROJECT1
@@ -221,7 +218,7 @@ GRANT DATABASE ROLE DB_ROLE_PROJECT1 TO SHARE PROJECT1_SHARE;
  -- note the specific account id that you need here is called the account locator
  -- to find the account locator, go to the account settings
  -- or simply run this command in Snowsight: SELECT CURRENT_ACCOUNT();
-ALTER SHARE PROJECT1_SHARE ADD ACCOUNTS = KV29405;
+
 -- check details of which privileges have been granted to the share
 SHOW GRANTS TO SHARE PROJECT1_SHARE;
 
@@ -246,10 +243,9 @@ CREATE OR REPLACE ROLE DB_ROLE_PROJECT1;
 -- grant the role to the current user
 GRANT ROLE DB_ROLE_PROJECT1 TO USER GARTHJON2;
 
--- When you create a database from a share, it's considered imported, and Snowflake restricts how you manage privileges on it.
--- To grant access to a specific role, use:
+-- NOW GRANT DATABASE ROLE DB_ROLE_PROJECT2 TO ROLE DB_ROLE_PROJECT1;
 
-GRANT IMPORTED PRIVILEGES ON DATABASE PRODUCER_SHARE_COMPASS TO ROLE DB_ROLE_PROJECT1;
+
 
 -- troubleshooting access to the PATIENT_CONTACT table
 
@@ -372,6 +368,12 @@ WHERE GRANTED_ON IN ('DATABASE', 'SCHEMA', 'TABLE')
   -- 5) test whether the new role once access is granted to the share can also access the row level access policy
   --    hopefully the user will only be able to access the row level access policy if the user is assigned to the database role
   --    which is used in the row level access policy
+
+  -- try revoking the database role from the newly created role
+  -- this won't work because the newly created role has permissions from the public role
+  -- and the public role has permissions to the database role
+
+  REVOKE DATABASE ROLE DB_ROLE_PROJECT1 FROM ROLE DB_ROLE_PROJECT1;
 
 
 
