@@ -250,7 +250,106 @@ CREATE OR REPLACE ROLE DB_ROLE_PROJECT1;
 -- grant the role to the current user
 GRANT ROLE DB_ROLE_PROJECT1 TO USER GARTHJON2;
 
--- NOW GRANT DATABASE ROLE DB_ROLE_PROJECT2 TO ROLE DB_ROLE_PROJECT1;
+-- TESTING WHICH ROLE HAS ACCESS TO THE POLICY
+-- RECALL THAT ONLY PRIMARY FUNCTIONAL ROLES WHICH WE HAVE EXPLICITLY GRANTED THE SECONDARY DATABASE ROLE TO SHOULD BE ABLE ACCESS THE TABLE WITH THR ROW LEVEL 
+-- ACCESS POLICY ON IT
+
+  -- recall that this is the row level access policy definition (on the producer side of the share) which is limiting access to table Patient_Contact
+  -- to those primary functional roles who have been granted permission to the secondary database role which applicable/commuted across the share
+  -- note that by default an admin role WILL have access to the secondary database role which has been commuted across the share
+  -- and that makes sense because admin it this role which will need to grant access to other roles/users
+  -- i say that an admin user can 'see' the secondary database role or 'access it' along with the phrase 'the secondary database is active for the admin role'
+  -- synomously: these phrases mean the same thing, but snowflake and copilot tend to speak of a secondary database role being active against a primary role (or not)
+
+  ALTER ROW ACCESS POLICY PROJECT1_PHONE_ACCESS_POLICY
+SET BODY ->
+  CASE
+    WHEN IS_DATABASE_ROLE_IN_SESSION('DB_ROLE_PROJECT2') AND USE_CONCEPT_ID = 'HomePhone' THEN TRUE
+    ELSE FALSE
+  END;
+
+
+-- ************IMPORTANT - WE NEED TO REMOVE ACCESS TO THE DATABASE ROLE FOR ALL ROLES AGAINST THE CURRENT USER USING REVOKE ON THE DATABASE ROLE*************************
+-- *** THIS IS ALL ON THE CONSUMER SIDE OF THE SHARE
+-- list all available roles against the current user
+show roles;
+
+-- using an account admin revoke permissions from the database role for all possible primary functional roles against the user
+-- for a user who has both admin and non admin roles (as the case here with my user in the free test account)
+-- we need to explicitly revoke permissions from the database role secondary role from ALL primary roles and restart snowflake - log out/log back in
+-- because the fact of my test user account having both admin and non admin primary roles, it seems that all primary roles by default with such a 'mixed' role account
+-- have access to the secondary database role which has been commuted across the share
+-- which means (by defaault) that all primary roles against this account will be able to 'see' the shared database role and thus prositively trigger the row level access policy
+use role accountadmin;
+REVOKE DATABASE ROLE DB_ROLE_PROJECT2 FROM ROLE ACCOUNTADMIN;
+REVOKE DATABASE ROLE DB_ROLE_PROJECT2 FROM ROLE  DB_ROLE_PROJECT1;
+REVOKE DATABASE ROLE DB_ROLE_PROJECT2 FROM ROLE  ORGADMIN;
+REVOKE DATABASE ROLE DB_ROLE_PROJECT2 FROM ROLE  PUBLIC;
+REVOKE DATABASE ROLE DB_ROLE_PROJECT2 FROM ROLE  RESEARCH_ROLE;
+REVOKE DATABASE ROLE DB_ROLE_PROJECT2 FROM ROLE  RESEARCH_ROLE2;
+REVOKE DATABASE ROLE DB_ROLE_PROJECT2 FROM ROLE  SECURITYADMIN;
+REVOKE DATABASE ROLE DB_ROLE_PROJECT2 FROM ROLE  SNOWFLAKE_LEARNING_ROLE;
+REVOKE DATABASE ROLE DB_ROLE_PROJECT2 FROM ROLE  SYSADMIN;
+REVOKE DATABASE ROLE DB_ROLE_PROJECT2 FROM ROLE  USERADMIN;
+
+-- check current primary role which is active in this session, most permissions should be directed off this primary role
+select current_role()
+
+-- change primary role to be an account admin (which will automatically have permissions on the database role - a secondary role)
+use role accountadmin;
+-- check is database role  active in the current session (as a secondary role)
+SELECT IS_DATABASE_ROLE_IN_SESSION('DB_ROLE_PROJECT2');
+SELECT COUNT(*) AS COUNTALL, USE_CONCEPT_ID FROM PATIENT_CONTACT
+GROUP BY USE_CONCEPT_ID
+
+-- change primary role to be a role which does not have admin permissions 
+use role db_role_project1;
+-- check is database role  active in the current session (as a secondary role)
+SELECT IS_DATABASE_ROLE_IN_SESSION('DB_ROLE_PROJECT2');
+SELECT COUNT(*) AS COUNTALL, USE_CONCEPT_ID FROM PATIENT_CONTACT
+GROUP BY USE_CONCEPT_ID
+
+
+-- change primary role to be a role which does not have admin permissions 
+use role research_role2;
+-- check is database role  active in the current session (as a secondary role)
+SELECT IS_DATABASE_ROLE_IN_SESSION('DB_ROLE_PROJECT2');
+SELECT COUNT(*) AS COUNTALL, USE_CONCEPT_ID FROM PATIENT_CONTACT
+GROUP BY USE_CONCEPT_ID
+
+--***granting permission to the secondary database role which has been commuted across the share from the producer account****
+--***for an existing prinary functional role which does not currently have access to that secondary database role
+--*** and therefore this  secondary database role will never currently be 'active' in session for this primary functional role
+--*** but if we grant permission to this secondary database role to this primary functional role
+--*** the secondary database role should become active and then under that primary functional role the user should then be able to 'see'
+--*** the share and the RLAC (row level access policy) should also apply for this primary functional role in addition to the primary functional
+--*** admin role
+
+-- change primary role to be a role which does not have admin permissions 
+use role db_role_project1;
+-- check is database role  active in the current session (as a secondary role)
+SELECT IS_DATABASE_ROLE_IN_SESSION('DB_ROLE_PROJECT2');
+-- next check whether or not we can query the 'shared' dataset which has had the role level access policy applied to it
+SELECT COUNT(*) AS COUNTALL, USE_CONCEPT_ID FROM PATIENT_CONTACT
+GROUP BY USE_CONCEPT_ID
+
+-- [switch to admin role to grant  permission to functional role which does not have access to the share currently]
+use role accountadmin;
+use database producer_share_compass;
+-- grant the commuted secondary database role (via the share) to teh primary functional role which cannot currently access that
+-- secondary secondary database role
+GRANT DATABASE ROLE DB_ROLE_PROJECT2 TO ROLE  DB_ROLE_PROJECT1;
+
+-- now you should see that the functional which did not have permission to the secondary database role via the share now has permission
+use role db_role_project1;
+USE WAREHOUSE snowflake_learning_wh;
+-- check is database role  active in the current session (as a secondary role)
+SELECT IS_DATABASE_ROLE_IN_SESSION('DB_ROLE_PROJECT2');
+-- next check whether or not we can query the 'shared' dataset which has had the role level access policy applied to it
+SELECT COUNT(*) AS COUNTALL, USE_CONCEPT_ID FROM PATIENT_CONTACT
+GROUP BY USE_CONCEPT_ID
+
+
 
 
 
