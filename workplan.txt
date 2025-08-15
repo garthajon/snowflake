@@ -1,0 +1,39 @@
+work plan - last revised as at: 15/08/2025
+------------------------------------------
+
+shares and RLAC in snowflake - pull in another dataset from AWS container
+create a RLAC (row level access policy) which joins to another RLAC (row level access policy)
+so we have a RLAC on one table, which works on each row, on another table for each row in the rlac 
+reference the other RLAC. So (for example) if in table encounter I only want to pick patients
+with a home phone number but there is no home phone number in table encounter i join over patient_id
+to table contacts and for each row the RLAC joins over patient_id to the RLAC in the other table.
+Apparently an RLAC on a single table improves performance of a query in terms of cost/speed, but RLACS across joins
+are more expensive even than 'normal' queries. There is a way of tracking/auditing queries running in snowflake
+and writing the cost/query details to an audit table and then comparing: we need to do this.
+
+In relation to the above bearing in mind that these RLACS should be across shares with designated 'shared' econdary database roles
+assigned to primary users/roles in accounts, what we should be doing is experimenting sharing to each other's accounts
+ (permissions and RLACS/roles to each other ) - so I think in GitHub we should have a 'test sharing/RLAC script' for these scenarios
+ with each scenarios
+
+ Maybe we could look at doing a streamlit dashboard/web site to display the cost/audit comparison for categories of RLAC query?
+ E.g. query with no RLAC, query with RLAC, and query on a table with a join RLAC (avg cost as the metric perhaps). By role also perhaps?
+  This is a costing report. and roles are used to identify and track the cost of a research project. 
+
+
+in AWS look at secure vault and encryption/salt keys and integration with
+snowflake and DBT, working between the vault, dbt and snowflake to encryption
+an identifier, need to know this for at least 2 reasons 1) encrypting
+patient identifiable data for researchers to access 2) doing a cross
+SDE (secure data environment) project with other SDEs and sharing the 
+same encryption key across SDEs
+
+container services in AWS cloud and running docker containers in container services
+
+Secure file transfer in the cloud (in AWS)
+
+There is also streamlit in snowflake - might be interesting to look at this
+
+
+
+
