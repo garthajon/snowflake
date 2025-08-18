@@ -8,7 +8,6 @@
 -- also note that a primary (functional) role is granted permission to the database role on the consumer side
 -- (this has happened already - we're just amended access rights to this additional table)
 GRANT SELECT ON TABLE PRODUCER_SHARE_COMPASS.PUBLIC.PATIENT_CONTACT2 TO DATABASE ROLE DB_ROLE_PROJECT2;
-
 -- run this on the producer side to check which row level access policies have been applied
 -- note that this will not work on the consumer side of the share
 use role accountadmin;
