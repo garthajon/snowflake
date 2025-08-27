@@ -106,6 +106,117 @@ END;
 
 -- end **********************************patient_contact-inserts make table and copy into *****************
 
+
+-- begin **********************************observation-inserts make table and copy into *****************
+
+BEGIN
+    -- Infer the schema
+    CREATE OR REPLACE TEMP TABLE inferred_schema AS 
+    SELECT * FROM TABLE(
+        INFER_SCHEMA(
+            LOCATION => '@my_s3_stage/observation-inserts.parquet',
+            FILE_FORMAT => 'my_parquet_format'
+        )
+    );
+
+    -- Generate the CREATE TABLE statement dynamically
+    LET create_stmt STRING;
+
+    SELECT 'CREATE OR REPLACE TABLE OBSERVATION (' ||
+           LISTAGG(column_name || ' ' || upper(type), ', ') 
+           || ');'
+    INTO create_stmt
+    FROM inferred_schema;
+
+    -- Execute the CREATE TABLE statement
+    EXECUTE IMMEDIATE create_stmt;
+END;
+
+
+DECLARE copy_query STRING;
+-- VARIABLE DECLARATION BETWEEN BEGIN AND END USES LET
+-- VARIABLE ASSIGNMENT WITHIN BEGIN AND END USES :=
+BEGIN  
+    LET col_list STRING;
+    SELECT LISTAGG('"' || UPPER(column_name) || '"', ', ') INTO :col_list
+    FROM TABLE(INFER_SCHEMA(
+        LOCATION => '@my_s3_stage/observation-inserts.parquet',
+        FILE_FORMAT => 'my_parquet_format'
+    )); 
+    copy_query := 'COPY INTO observation (' || col_list || ') FROM (SELECT ';
+    LET select_list STRING;
+    SELECT LISTAGG('$1:' || column_name || '::' || type, ', ') INTO :select_list
+    FROM TABLE(INFER_SCHEMA(
+        LOCATION => '@my_s3_stage/observation-inserts.parquet',
+        FILE_FORMAT => 'my_parquet_format'
+    ));  
+    copy_query := copy_query || select_list || ' FROM @my_s3_stage/observation-inserts.parquet) FILE_FORMAT = (FORMAT_NAME = ''my_parquet_format'');';
+EXECUTE IMMEDIATE :copy_query;
+END;
+-- RETURN :copy_query;
+-- EXECUTE IMMEDIATE :copy_query;
+
+
+-- end **********************************observation-inserts make table and copy into *****************
+
+
+-- begin **********************************observation-inserts make table and copy into *****************
+
+BEGIN
+    -- Infer the schema
+    CREATE OR REPLACE TEMP TABLE inferred_schema AS 
+    SELECT * FROM TABLE(
+        INFER_SCHEMA(
+            LOCATION => '@my_s3_stage/observation-inserts.parquet',
+            FILE_FORMAT => 'my_parquet_format'
+        )
+    );
+
+    -- Generate the CREATE TABLE statement dynamically
+    LET create_stmt STRING;
+
+    SELECT 'CREATE OR REPLACE TABLE OBSERVATION2 (' ||
+           LISTAGG(column_name || ' ' || upper(type), ', ') 
+           || ');'
+    INTO create_stmt
+    FROM inferred_schema;
+
+    -- Execute the CREATE TABLE statement
+    EXECUTE IMMEDIATE create_stmt;
+END;
+
+
+DECLARE copy_query STRING;
+-- VARIABLE DECLARATION BETWEEN BEGIN AND END USES LET
+-- VARIABLE ASSIGNMENT WITHIN BEGIN AND END USES :=
+BEGIN  
+    LET col_list STRING;
+    SELECT LISTAGG('"' || UPPER(column_name) || '"', ', ') INTO :col_list
+    FROM TABLE(INFER_SCHEMA(
+        LOCATION => '@my_s3_stage/observation-inserts.parquet',
+        FILE_FORMAT => 'my_parquet_format'
+    )); 
+    copy_query := 'COPY INTO observation2 (' || col_list || ') FROM (SELECT ';
+    LET select_list STRING;
+    SELECT LISTAGG('$1:' || column_name || '::' || type, ', ') INTO :select_list
+    FROM TABLE(INFER_SCHEMA(
+        LOCATION => '@my_s3_stage/observation-inserts.parquet',
+        FILE_FORMAT => 'my_parquet_format'
+    ));  
+    copy_query := copy_query || select_list || ' FROM @my_s3_stage/observation-inserts.parquet) FILE_FORMAT = (FORMAT_NAME = ''my_parquet_format'');';
+EXECUTE IMMEDIATE :copy_query;
+END;
+-- RETURN :copy_query;
+-- EXECUTE IMMEDIATE :copy_query;
+
+
+-- end **********************************observation-inserts make table and copy into *****************
+
+
+-- POLICY ON ORGANIZATION COLUMN
+-- SELECT ORGANIZATION_ID, COUNT(*) AS COUNTALL FROM OBSERVATION2 GROUP BY ORGANIZATION_ID
+-- ORG FOR SELECTION A00005
+
 -- create a database role which will be used in the Row level access policy for a specific research project
 -- to restrict access on the share producer side to specific rows
 CREATE OR REPLACE DATABASE ROLE DB_ROLE_PROJECT1;
@@ -121,6 +232,29 @@ GRANT DATABASE ROLE DB_ROLE_PROJECT1 TO USER GARTHJON;
 -- so then the RLAC is applied for that role
 -- thus the check below asks whether the following database_role is being used: DB_ROLE_PROJECT1
 -- if it is then the policy applied for that role 
+
+-- ADD OBSERVATIONS TABLE TO SHARE AND ACCESS POLICY FOR OBSERVATION TABLE
+
+CREATE OR REPLACE ROW ACCESS POLICY PROJECT1_ORGANIZATION_POLICY
+AS (ORGANIZATION_ID STRING) RETURNS BOOLEAN ->
+  CASE
+    WHEN IS_DATABASE_ROLE_IN_SESSION('DB_ROLE_PROJECT2') AND ORGANIZATION_ID = 'A00005' THEN TRUE
+    ELSE FALSE
+  END;
+
+  ALTER ROW ACCESS POLICY PROJECT1_ORGANIZATION_POLICY
+SET BODY ->
+  CASE
+    WHEN IS_DATABASE_ROLE_IN_SESSION('DB_ROLE_PROJECT2') AND ORGANIZATION_ID = 'A00005' THEN TRUE
+    ELSE FALSE
+  END;
+
+ALTER TABLE OBSERVATION ADD ROW ACCESS POLICY PROJECT1_ORGANIZATION_POLICY ON (ORGANIZATION_ID);
+
+DESCRIBE ROW ACCESS POLICY PROJECT1_ORGANIZATION_POLICY;
+
+GRANT SELECT ON TABLE PRODUCER_SHARE_COMPASS.PUBLIC.OBSERVATION TO DATABASE ROLE DB_ROLE_PROJECT2;
+GRANT SELECT ON TABLE PRODUCER_SHARE_COMPASS.PUBLIC.OBSERVATION2 TO DATABASE ROLE DB_ROLE_PROJECT2;
 
 CREATE OR REPLACE ROW ACCESS POLICY PROJECT1_PHONE_ACCESS_POLICY
 AS (USE_CONCEPT_ID STRING) RETURNS BOOLEAN ->
