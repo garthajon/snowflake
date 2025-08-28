@@ -213,6 +213,11 @@ END;
 -- end **********************************observation-inserts make table and copy into *****************
 
 
+
+
+
+
+
 -- POLICY ON ORGANIZATION COLUMN
 -- SELECT ORGANIZATION_ID, COUNT(*) AS COUNTALL FROM OBSERVATION2 GROUP BY ORGANIZATION_ID
 -- ORG FOR SELECTION A00005
