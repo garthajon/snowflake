@@ -211,6 +211,157 @@ QUERY_TAG DESC,
 START_TIME DESC
 LIMIT 20;
 
+-- RESET TAGGING TO BLANK
+ALTER SESSION SET QUERY_TAG = '';
+
+-- A MORE COMPLEX QUERY TO TEST CREDIT USAGE (WITH A JOIN)
+
+-- group by query for table with row level access
+use role db_role_project1;
+use warehouse snowflake_learning_wh;
+ALTER SESSION SET QUERY_TAG = 'OBSERVATIONS WITH RLAC';
+SELECT COUNT(*) AS COUNTALL, OBSERVATION.ORGANIZATION_ID FROM OBSERVATION
+LEFT JOIN OBSERVATION AS OBS2 ON OBSERVATION.LDS_RECORD_ID = OBS2.LDS_RECORD_ID 
+full outer join  OBSERVATION AS OBS3 ON OBSERVATION.LDS_RECORD_ID = OBS3.LDS_RECORD_ID 
+and OBS3.ORGANIZATION_ID = 'A00005' and OBS3.lds_is_deleted = 'FALSE'
+full outer join  OBSERVATION AS OBS4 ON OBSERVATION.LDS_RECORD_ID = OBS4.LDS_RECORD_ID 
+and OBS4.ORGANIZATION_ID = 'A00005' and OBS4.lds_is_deleted = 'FALSE'
+RIGHT outer join  OBSERVATION AS OBS5 ON OBSERVATION.LDS_RECORD_ID = OBS5.LDS_RECORD_ID 
+and OBS5.ORGANIZATION_ID = 'A00005' and OBS5.lds_is_deleted = 'FALSE'
+INNER JOIN   OBSERVATION AS OBS6 ON OBSERVATION.LDS_RECORD_ID = OBS6.LDS_RECORD_ID 
+AND (SUBSTR(OBS6.LDS_BUSINESS_KEY,2,1) = 'A' OR SUBSTR(OBS6.LDS_BUSINESS_KEY,2,1) = 'D'  OR SUBSTR(OBS6.LDS_BUSINESS_KEY,2,1) = 'F')
+FULL OUTER join 
+(select distinct OBS1.lds_record_id as inner_id from OBSERVATION as OBS1,OBSERVATION as OBS2 where SUBSTR(OBS1.LDS_BUSINESS_KEY,2,1) = 'A' 
+and  (SUBSTR(OBS2.LDS_BUSINESS_KEY,3,1) <> 'B' OR SUBSTR(OBS2.LDS_BUSINESS_KEY,3,1) <> 'X' OR SUBSTR(OBS2.LDS_BUSINESS_KEY,3,1) <> 'Y')) as inner_cartesian_final
+on inner_cartesian_final.inner_id = OBSERVATION.LDS_RECORD_ID 
+FULL OUTER join 
+(select distinct OBS1.lds_record_id as inner_id from OBSERVATION as OBS1,OBSERVATION as OBS2 where SUBSTR(OBS1.LDS_BUSINESS_KEY,2,1) = 'P' 
+and  (SUBSTR(OBS2.LDS_BUSINESS_KEY,3,1) = 'Q' OR SUBSTR(OBS2.LDS_BUSINESS_KEY,3,1) = 'R' OR SUBSTR(OBS2.LDS_BUSINESS_KEY,3,1) <> 'T')) as inner_cartesian_final2
+on inner_cartesian_final2.inner_id = OBSERVATION.LDS_RECORD_ID 
+FULL OUTER join 
+(select distinct OBS1.lds_record_id as inner_id from OBSERVATION as OBS1,OBSERVATION as OBS2 where SUBSTR(OBS1.LDS_BUSINESS_KEY,2,1) = 'S' 
+and  (SUBSTR(OBS2.LDS_BUSINESS_KEY,3,1) = 'W' OR SUBSTR(OBS2.LDS_BUSINESS_KEY,3,1) = 'R' OR SUBSTR(OBS2.LDS_BUSINESS_KEY,3,1) = 'Y')) as inner_cartesian_final3
+on inner_cartesian_final3.inner_id = OBSERVATION.LDS_RECORD_ID 
+GROUP BY OBSERVATION.ORGANIZATION_ID;
+-- RESET TAGGING TO BLANK
+ALTER SESSION SET QUERY_TAG = '';
+
+-- group by query for table without row level access
+use role db_role_project1;
+use warehouse snowflake_learning_wh;
+ALTER SESSION SET QUERY_TAG = 'OBSERVATIONS WITHOUT RLAC';
+SELECT COUNT(*) AS COUNTALL, OBSERVATION2.ORGANIZATION_ID FROM OBSERVATION2
+LEFT JOIN OBSERVATION2 AS OBS2 ON OBSERVATION2.LDS_RECORD_ID = OBS2.LDS_RECORD_ID 
+full outer join  OBSERVATION2 AS OBS3 ON OBSERVATION2.LDS_RECORD_ID = OBS3.LDS_RECORD_ID 
+and OBS3.ORGANIZATION_ID = 'A00005' and OBS3.lds_is_deleted = 'FALSE'
+full outer join  OBSERVATION2 AS OBS4 ON OBSERVATION2.LDS_RECORD_ID = OBS4.LDS_RECORD_ID 
+and OBS4.ORGANIZATION_ID = 'A00005' and OBS4.lds_is_deleted = 'FALSE'
+RIGHT outer join  OBSERVATION2 AS OBS5 ON OBSERVATION2.LDS_RECORD_ID = OBS5.LDS_RECORD_ID 
+and OBS5.ORGANIZATION_ID = 'A00005' and OBS5.lds_is_deleted = 'FALSE'
+INNER JOIN   OBSERVATION2 AS OBS6 ON OBSERVATION2.LDS_RECORD_ID = OBS6.LDS_RECORD_ID 
+AND (SUBSTR(OBS6.LDS_BUSINESS_KEY,2,1) = 'A' OR SUBSTR(OBS6.LDS_BUSINESS_KEY,2,1) = 'D'  OR SUBSTR(OBS6.LDS_BUSINESS_KEY,2,1) = 'F')
+FULL OUTER join 
+(select distinct OBS1.lds_record_id as inner_id from OBSERVATION2 as OBS1,OBSERVATION2 as OBS2 where SUBSTR(OBS1.LDS_BUSINESS_KEY,2,1) = 'A' 
+and  (SUBSTR(OBS2.LDS_BUSINESS_KEY,3,1) <> 'B' OR SUBSTR(OBS2.LDS_BUSINESS_KEY,3,1) <> 'X' OR SUBSTR(OBS2.LDS_BUSINESS_KEY,3,1) <> 'Y')) as inner_cartesian_final
+on inner_cartesian_final.inner_id = OBSERVATION2.LDS_RECORD_ID 
+FULL OUTER join 
+(select distinct OBS1.lds_record_id as inner_id from OBSERVATION2 as OBS1,OBSERVATION2 as OBS2 where SUBSTR(OBS1.LDS_BUSINESS_KEY,2,1) = 'P' 
+and  (SUBSTR(OBS2.LDS_BUSINESS_KEY,3,1) = 'Q' OR SUBSTR(OBS2.LDS_BUSINESS_KEY,3,1) = 'R' OR SUBSTR(OBS2.LDS_BUSINESS_KEY,3,1) <> 'T')) as inner_cartesian_final2
+on inner_cartesian_final2.inner_id = OBSERVATION2.LDS_RECORD_ID 
+FULL OUTER join 
+(select distinct OBS1.lds_record_id as inner_id from OBSERVATION2 as OBS1,OBSERVATION as OBS2 where SUBSTR(OBS1.LDS_BUSINESS_KEY,2,1) = 'S' 
+and  (SUBSTR(OBS2.LDS_BUSINESS_KEY,3,1) = 'W' OR SUBSTR(OBS2.LDS_BUSINESS_KEY,3,1) = 'R' OR SUBSTR(OBS2.LDS_BUSINESS_KEY,3,1) = 'Y')) as inner_cartesian_final3
+on inner_cartesian_final3.inner_id = OBSERVATION2.LDS_RECORD_ID 
+GROUP BY OBSERVATION2.ORGANIZATION_ID;
+-- RESET TAGGING TO BLANK
+ALTER SESSION SET QUERY_TAG = '';
+
+
+-- Now we can run a query to check the credits used by these queries
+
+use role accountadmin;
+use warehouse snowflake_learning_wh;
+WITH query_costs AS (
+SELECT DISTINCT
+q.execution_status,
+Q.COMPILATION_TIME,
+Q.EXECUTION_TIME,
+Q.CREDITS_USED_CLOUD_SERVICES,
+--q.error_code,
+Q.QUERY_TYPE,
+q.query_id,
+q.query_text,
+q.start_time,
+q.end_time,
+q.query_tag,
+w.credits_used_compute AS compute_credits
+FROM
+snowflake.account_usage.query_history q
+JOIN
+snowflake.account_usage.warehouse_metering_history w
+ON
+q.warehouse_id = w.warehouse_id
+WHERE
+q.start_time >= DATEADD(DAY, -2, CURRENT_DATE) -- Last 2 days
+)
+
+
+SELECT 
+query_id,
+START_TIME,
+query_text,
+query_tag,
+execution_status,
+--error_code,
+MAX(compute_credits) AS MAX_COMPUTE_CREDITS,
+COMPILATION_TIME,
+EXECUTION_TIME,
+CREDITS_USED_CLOUD_SERVICES,
+TIMESTAMPDIFF('milliseconds', start_time, end_time) AS execution_time_milliseconds
+FROM
+query_costs
+where (query_tag like '%OBSERVATIONS%' OR query_tag like '%PATIENT_CONTACT%')
+AND QUERY_TEXT LIKE '%COUNT%'
+AND QUERY_TEXT  LIKE '%inner_cartesian_final%'
+AND execution_status = 'SUCCESS'
+AND QUERY_TYPE = 'SELECT'
+GROUP BY 
+query_id,
+START_TIME,
+query_text,
+query_tag,
+execution_status,
+COMPILATION_TIME,
+EXECUTION_TIME,
+CREDITS_USED_CLOUD_SERVICES,
+TIMESTAMPDIFF('milliseconds', start_time, end_time)
+ORDER BY
+QUERY_TAG DESC,
+START_TIME DESC
+LIMIT 20;
+
+
+SELECT TOP 10 
+query_id,
+START_TIME,
+query_text,
+query_tag,
+execution_status,
+--error_code,
+COMPILATION_TIME,
+EXECUTION_TIME,
+CREDITS_USED_CLOUD_SERVICES
+FROM SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY
+where (query_tag like '%OBSERVATIONS%' OR query_tag like '%PATIENT_CONTACT%')
+AND QUERY_TEXT LIKE '%COUNT%'
+AND QUERY_TEXT  LIKE '%inner_cartesian_final%'
+AND execution_status = 'SUCCESS'
+ORDER BY
+
+START_TIME ASC
+--AND QUERY_TYPE = 'SELECT'
+
+
 
 
 
