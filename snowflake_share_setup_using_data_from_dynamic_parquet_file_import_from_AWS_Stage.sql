@@ -1,4 +1,5 @@
 -- create database for sharing data from the producer snowflake account
+-- adding a comment to illustrate the GIT integration
 create database PRODUCER_SHARE_COMPASS
 
 -- firstly create the integration for an AWS S3 bucket/ storage bucket which I have created in AWS
