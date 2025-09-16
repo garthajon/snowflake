@@ -65,6 +65,7 @@ def lambda_handler(event, context):
             # create a new one dimensional array with the row number and the sum result
             # for this row
             newArrayEntry = [rowNumber, rowSum]
+         
 
             # Add the newArrayEntry to the main dataArray list
             # add the current one dimensional array to the main dataArray as sum result
@@ -75,8 +76,11 @@ def lambda_handler(event, context):
         
         # for loop finishes here with fully populated dataArray
         # Put dataArray into a dictionary, then convert it into a json format string
-        dataArrayToReturn = {'data' : dataArray}
+        dataArrayToReturn = {"data" : dataArray}
         json_compatible_string_to_return = json.dumps(dataArrayToReturn)
+        
+
+           
 
     except Exception as err:
         # Statuscode = 400 signifies an error
@@ -85,8 +89,11 @@ def lambda_handler(event, context):
         # Function will return the error
         json_compatible_string_to_return = json.dumps({"data":str(err)})
 
+    
     return {
         'statusCode': statusCode
         ,   'headers': { 'Content-Type': 'application/json' }
         ,   'body' : json_compatible_string_to_return
         }
+   
+    
